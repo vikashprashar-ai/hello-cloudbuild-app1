@@ -33,7 +33,7 @@ steps:
       - |
         git config --global user.email "cloudbuild@gcp.com"
         git config --global user.name "Cloud Build CI"
-        git clone https://x-access-token:$${GITHUB_TOKEN}@github.com/vikashprashar-ai/devops-repo.git
+        git clone https://x-access-token:$${GITHUB_TOKEN}@github.com/vikashprashar-ai/devops-repo1.git
         cd devops-repo
         sed -i "s|image: us-central1-docker.pkg.dev/.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA|g" deployment.yaml
         git add deployment.yaml
