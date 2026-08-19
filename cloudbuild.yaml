@@ -1,0 +1,48 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Docker Image'
+    args: [
+      'build',
+      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA',
+      '.'
+    ]
+
+  - name: 'aquasec/trivy:latest'
+    id: 'Trivy Security Vulnerability Scan'
+    args: [
+      'image',
+      '--exit-code', '1',
+      '--severity', 'CRITICAL',
+      'us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Secure Image to Registry'
+    args: [
+      'push',
+      'us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA'
+    ]
+
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'GitOps Manifest Synchronization Loop'
+    entrypoint: 'bash'
+    secretEnv: ['GITHUB_TOKEN']
+    args:
+      - '-c'
+      - |
+        git config --global user.email "cloudbuild@gcp.com"
+        git config --global user.name "Cloud Build CI"
+        git clone https://x-access-token:${GITHUB_TOKEN}@github.com/YOUR-GITHUB-USERNAME/devops-repo.git
+        cd devops-repo
+        sed -i "s|image: us-central1-docker.pkg.dev/.*|image: us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA|g" deployment.yaml
+        git add deployment.yaml
+        git commit -m "Automated GitOps promotion to version $SHORT_SHA [skip ci]" || true
+        git push origin main
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/github-token/versions/latest
+      env: 'GITHUB_TOKEN'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
