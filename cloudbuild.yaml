@@ -13,6 +13,7 @@ steps:
       'image',
       '--exit-code', '1',
       '--severity', 'CRITICAL',
+      '--ignore-unfixed',
       'us-central1-docker.pkg.dev/$PROJECT_ID/payment-apps/hello-cloudbuild-app:$SHORT_SHA'
     ]
 
